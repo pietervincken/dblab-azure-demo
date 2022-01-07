@@ -4,8 +4,8 @@ terraform {
   }
 
   backend "azurerm" {
-    resource_group_name  = "sa-dblab-demo-state"
-    storage_account_name = "dblabdemostate"
+    resource_group_name  = "rg-dblab-demo-state"
+    storage_account_name = "sadblabdemostate"
     container_name       = "tfstate"
     key                  = "terraform.tfstate"
   }
