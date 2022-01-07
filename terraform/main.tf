@@ -1,3 +1,20 @@
+terraform {
+  required_providers {
+    azurerm = "~> 2.91.0"
+  }
+
+  backend "azurerm" {
+    resource_group_name  = "sa-dblab-demo-state"
+    storage_account_name = "dblabdemostate"
+    container_name       = "tfstate"
+    key                  = "terraform.tfstate"
+  }
+}
+
+provider "azurerm" {
+  features {}
+}
+
 locals{
 
     name="dblabdemo"
@@ -46,8 +63,12 @@ resource "random_string" "username" {
   length      = 16
   special     = false
   min_lower   = 1
-  min_numeric = 1
   min_upper   = 1
+}
+
+resource "tls_private_key" "this" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
 }
 
 resource "azurerm_key_vault_secret" "username" {
@@ -63,6 +84,24 @@ resource "azurerm_key_vault_secret" "password" {
   key_vault_id = azurerm_key_vault.this.id
   name         = "username"
   value        = random_string.username.result
+  depends_on = [
+    azurerm_key_vault_access_policy.this
+  ]
+}
+
+resource "azurerm_key_vault_secret" "private_key" {
+  key_vault_id = azurerm_key_vault.this.id
+  name         = "private"
+  value        = tls_private_key.this.private_key_pem
+  depends_on = [
+    azurerm_key_vault_access_policy.this
+  ]
+}
+
+resource "azurerm_key_vault_secret" "public_key" {
+  key_vault_id = azurerm_key_vault.this.id
+  name         = "public"
+  value        = tls_private_key.this.public_key_pem
   depends_on = [
     azurerm_key_vault_access_policy.this
   ]
@@ -94,4 +133,82 @@ resource "azurerm_postgresql_database" "this" {
   collation           = "English_United States.1252"
 }
 
-resource ""
+## TODO Setup firewall rules for vm to access db and for user to access db
+
+resource "azurerm_virtual_network" "this" {
+  name                = "vnet-${local.name}"
+  address_space       = ["10.0.0.0/16"]
+  location            = azurerm_resource_group.this.location
+  resource_group_name = azurerm_resource_group.this.name
+}
+
+resource "azurerm_subnet" "this" {
+  name                 = "internal"
+  resource_group_name  = azurerm_resource_group.this.name
+  virtual_network_name = azurerm_virtual_network.this.name
+  address_prefixes     = ["10.0.2.0/24"]
+}
+
+resource "azurerm_public_ip" "this" {
+  name                = "pip-${local.name}"
+  resource_group_name = azurerm_resource_group.this.name
+  location            = azurerm_resource_group.this.location
+  allocation_method   = "Dynamic"
+}
+
+resource "azurerm_network_interface" "this" {
+  name                = "nic-${local.name}"
+  location            = azurerm_resource_group.this.location
+  resource_group_name = azurerm_resource_group.this.name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = azurerm_subnet.this.id
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.this.id
+  }
+}
+
+resource "azurerm_linux_virtual_machine" "this" {
+  name                = "vm-${local.name}"
+  resource_group_name = azurerm_resource_group.this.name
+  location            = azurerm_resource_group.this.location
+  size                = "Standard_B2ms"
+  admin_username      = "adminuser"
+  network_interface_ids = [
+    azurerm_network_interface.this.id,
+  ]
+
+  admin_ssh_key {
+    username   = "adminuser"
+    public_key = tls_private_key.this.public_key_openssh
+  }
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "UbuntuServer"
+    sku       = "18.04-LTS"
+    version   = "latest"
+  }
+}
+
+resource "azurerm_managed_disk" "this" {
+  name                 = "disk-${local.name}-this-disk"
+  location             = azurerm_resource_group.this.location
+  resource_group_name  = azurerm_resource_group.this.name
+  storage_account_type = "Standard_LRS"
+  create_option        = "Empty"
+  disk_size_gb         = 10
+}
+
+resource "azurerm_virtual_machine_data_disk_attachment" "this" {
+  managed_disk_id    = azurerm_managed_disk.this.id
+  virtual_machine_id = azurerm_linux_virtual_machine.this.id
+  lun                = "10"
+  caching            = "ReadWrite"
+}
