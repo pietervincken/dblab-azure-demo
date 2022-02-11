@@ -34,3 +34,5 @@ override.tf.json
 scripts/
 *.tfbackend
 *.key
+vm/server.yml
+.env

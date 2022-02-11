@@ -1,8 +1,10 @@
 #!/bin/bash
 
 test -f dblab.key || (az keyvault secret download --vault-name kvdblabdemo --name private -f dblab.key && chmod 0600 dblab.key)
-ip=$(az network public-ip show -g rg-dblabdemo -n pip-dblabdemo | jq --raw-output '.ipAddress')
-token=$(az keyvault secret show --vault-name kvdblabdemo --name token --query 'value')
+ip=$(az network public-ip show -g rg-dblabdemo -n pip-dblabdemo --query 'ipAddress' -o tsv)
+token=$(az keyvault secret show --vault-name kvdblabdemo --name token --query 'value' -o tsv)
+
+ssh adminuser@$ip -i dblab.key docker stop dblab_server && docker rm dblab_server && rm -rf /var/lib/dblab/dblab_pool_01/dump/* && rm -rf /var/lib/dblab/dblab_pool_01/data
 
 #Start DBLAB
 ssh adminuser@$ip -i dblab.key docker run \
@@ -14,14 +16,11 @@ ssh adminuser@$ip -i dblab.key docker run \
   --volume /var/lib/dblab:/var/lib/dblab/:rshared \
   --volume /home/adminuser/.dblab/engine/configs:/home/dblab/configs:ro \
   --volume /home/adminuser/.dblab/engine/meta:/home/dblab/meta \
-  --volume /var/lib/dblab/dblab_pool/dump:/var/lib/dblab/dblab_pool/dump \
-  --volume /sys/kernel/debug:/sys/kernel/debug:rw \
-  --volume /lib/modules:/lib/modules:ro \
-  --volume /proc:/host_proc:ro \
+  --volume /var/lib/dblab/dblab_pool_01/dump:/var/lib/dblab/dblab_pool_01/dump \
   --env DOCKER_API_VERSION=1.41 \
   --detach \
   --restart on-failure \
-  postgresai/dblab-server:3.0.0
+  postgresai/dblab-server:3.0.1
 
 ssh adminuser@$ip -i dblab.key dblab init \
   --environment-id=dblabdemo \
@@ -30,3 +29,6 @@ ssh adminuser@$ip -i dblab.key dblab init \
   --insecure
 
 ssh adminuser@$ip -i dblab.key dblab instance status
+
+echo "token: $token"
+open http://$ip:2346

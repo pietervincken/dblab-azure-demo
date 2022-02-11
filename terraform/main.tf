@@ -142,7 +142,7 @@ resource "azurerm_postgresql_database" "this" {
   resource_group_name = azurerm_resource_group.this.name
   server_name         = azurerm_postgresql_server.this.name
   charset             = "UTF8"
-  collation           = "English_United States.1252"
+  collation           = "en-US" #"en_US.utf8"
 }
 
 resource "azurerm_postgresql_firewall_rule" "firewall_postgres" {
@@ -191,7 +191,7 @@ resource "azurerm_linux_virtual_machine" "this" {
   name                = "vm-${local.name}"
   resource_group_name = azurerm_resource_group.this.name
   location            = azurerm_resource_group.this.location
-  size                = "Standard_B2ms"
+  size                = "Standard_D4as_v5"
   admin_username      = "adminuser"
   network_interface_ids = [
     azurerm_network_interface.this.id,
@@ -215,8 +215,8 @@ resource "azurerm_linux_virtual_machine" "this" {
   }
 }
 
-resource "azurerm_managed_disk" "this" {
-  name                 = "disk-${local.name}-this-disk"
+resource "azurerm_managed_disk" "disk_1" {
+  name                 = "disk-${local.name}-1-disk"
   location             = azurerm_resource_group.this.location
   resource_group_name  = azurerm_resource_group.this.name
   storage_account_type = "Standard_LRS"
@@ -224,9 +224,25 @@ resource "azurerm_managed_disk" "this" {
   disk_size_gb         = 10
 }
 
-resource "azurerm_virtual_machine_data_disk_attachment" "this" {
-  managed_disk_id    = azurerm_managed_disk.this.id
+resource "azurerm_virtual_machine_data_disk_attachment" "disk_1" {
+  managed_disk_id    = azurerm_managed_disk.disk_1.id
   virtual_machine_id = azurerm_linux_virtual_machine.this.id
   lun                = "10"
+  caching            = "ReadWrite"
+}
+
+resource "azurerm_managed_disk" "disk_2" {
+  name                 = "disk-${local.name}-2-disk"
+  location             = azurerm_resource_group.this.location
+  resource_group_name  = azurerm_resource_group.this.name
+  storage_account_type = "Standard_LRS"
+  create_option        = "Empty"
+  disk_size_gb         = 10
+}
+
+resource "azurerm_virtual_machine_data_disk_attachment" "disk_2" {
+  managed_disk_id    = azurerm_managed_disk.disk_2.id
+  virtual_machine_id = azurerm_linux_virtual_machine.this.id
+  lun                = "20"
   caching            = "ReadWrite"
 }

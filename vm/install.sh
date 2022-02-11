@@ -21,9 +21,27 @@ sudo zpool create -f \
   -O atime=off \
   -O recordsize=128k \
   -O logbias=throughput \
-  -m /var/lib/dblab/dblab_pool \
-  dblab_pool \
+  -m /var/lib/dblab/dblab_pool_01 \
+  dblab_pool_01 \
   "${DBLAB_DISK}"
+
+sudo zpool export dblab_pool_01
+sudo zpool import -d /dev/disk/by-id dblab_pool_01
+sudo zpool import -c /etc/zfs/zpool.cache
+
+export DBLAB_DISK=/dev/sdd
+sudo zpool create -f \
+  -O compression=on \
+  -O atime=off \
+  -O recordsize=128k \
+  -O logbias=throughput \
+  -m /var/lib/dblab/dblab_pool_02 \
+  dblab_pool_02 \
+  "${DBLAB_DISK}"
+
+sudo zpool export dblab_pool_02
+sudo zpool import -d /dev/disk/by-id dblab_pool_02
+sudo zpool import -c /etc/zfs/zpool.cache
 
 mkdir -p ~/.dblab/engine/configs
 
@@ -33,6 +51,3 @@ sudo mv ~/.dblab/dblab /usr/local/bin/dblab
 
 sudo groupadd docker
 sudo usermod -aG docker $USER
-
-docker pull postgresai/dblab-server:3.0.0
-docker pull postgresai/ce-ui:latest
