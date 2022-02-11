@@ -3,22 +3,17 @@ terraform {
     azurerm = "~> 2.91.0"
   }
 
-  backend "azurerm" {
-    resource_group_name  = "rg-dblab-demo-state"
-    storage_account_name = "sadblabdemostate"
-    container_name       = "tfstate"
-    key                  = "terraform.tfstate"
-  }
+  backend "azurerm" {}
 }
 
 provider "azurerm" {
   features {}
 }
 
-locals{
+locals {
 
-    name="dblabdemo"
-    location="West Europe"
+  name     = "dblabdemo"
+  location = "West Europe"
 
 }
 
@@ -60,10 +55,18 @@ resource "random_password" "password" {
 }
 
 resource "random_string" "username" {
+  length    = 16
+  special   = false
+  min_lower = 1
+  min_upper = 1
+}
+
+resource "random_string" "token" {
   length      = 16
   special     = false
   min_lower   = 1
   min_upper   = 1
+  min_numeric = 1
 }
 
 resource "tls_private_key" "this" {
@@ -71,7 +74,7 @@ resource "tls_private_key" "this" {
   rsa_bits  = 4096
 }
 
-resource "azurerm_key_vault_secret" "username" {
+resource "azurerm_key_vault_secret" "password" {
   key_vault_id = azurerm_key_vault.this.id
   name         = "password"
   value        = random_password.password.result
@@ -80,10 +83,19 @@ resource "azurerm_key_vault_secret" "username" {
   ]
 }
 
-resource "azurerm_key_vault_secret" "password" {
+resource "azurerm_key_vault_secret" "username" {
   key_vault_id = azurerm_key_vault.this.id
   name         = "username"
   value        = random_string.username.result
+  depends_on = [
+    azurerm_key_vault_access_policy.this
+  ]
+}
+
+resource "azurerm_key_vault_secret" "token" {
+  key_vault_id = azurerm_key_vault.this.id
+  name         = "token"
+  value        = random_string.token.result
   depends_on = [
     azurerm_key_vault_access_policy.this
   ]
@@ -133,7 +145,13 @@ resource "azurerm_postgresql_database" "this" {
   collation           = "English_United States.1252"
 }
 
-## TODO Setup firewall rules for vm to access db and for user to access db
+resource "azurerm_postgresql_firewall_rule" "firewall_postgres" {
+  name                = "pgfr-${local.name}"
+  resource_group_name = azurerm_resource_group.this.name
+  server_name         = azurerm_postgresql_server.this.name
+  start_ip_address    = "0.0.0.0"
+  end_ip_address      = "0.0.0.0"
+}
 
 resource "azurerm_virtual_network" "this" {
   name                = "vnet-${local.name}"
