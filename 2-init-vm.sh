@@ -24,7 +24,7 @@ yq -i e ".databaseContainer.dockerImage |= \"mypostgresai\"" vm/server.yml
 yq -i e ".retrieval.spec.logicalDump.options.databases = {\"dblabdemo\":{}}" vm/server.yml
 yq -i e ".retrieval.spec.logicalRestore.options.databases = {\"dblabdemo\":{}}" vm/server.yml
 yq -i e ".embeddedUI.host |= \"0.0.0.0\"" vm/server.yml
-yq -i e ".cloning.accessHost |= \"$db_fqdn\"" vm/server.yml
+yq -i e ".cloning.accessHost |= \"$ip\"" vm/server.yml
 yq -i e ".retrieval.spec.logicalDump.options.dumpLocation |= \"/var/lib/dblab/dblab_pool_01/dump\"" vm/server.yml
 yq -i e ".retrieval.spec.logicalRestore.options.dumpLocation |= \"/var/lib/dblab/dblab_pool_01/dump\"" vm/server.yml
 ## Workaround for YQ behavior
@@ -37,7 +37,7 @@ scp -i dblab.key $PWD/vm/Dockerfile adminuser@$ip:/home/adminuser/Dockerfile
 scp -i dblab.key $PWD/vm/server.yml adminuser@$ip:/home/adminuser/.dblab/engine/configs/server.yml
 
 echo "Installing all dependencies"
-ssh adminuser@$ip -i dblab.key 'sh /home/adminuser/install.sh && rm /home/adminuser/install.sh'
+ssh adminuser@$ip -i dblab.key 'bash /home/adminuser/install.sh && rm /home/adminuser/install.sh'
 
 echo "Build custom postgres image"
 ssh adminuser@$ip -i dblab.key 'docker build -t mypostgresai - < Dockerfile && rm /home/adminuser/Dockerfile'

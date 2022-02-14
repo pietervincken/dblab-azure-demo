@@ -4,8 +4,6 @@ test -f dblab.key || (az keyvault secret download --vault-name kvdblabdemo --nam
 ip=$(az network public-ip show -g rg-dblabdemo -n pip-dblabdemo --query 'ipAddress' -o tsv)
 token=$(az keyvault secret show --vault-name kvdblabdemo --name token --query 'value' -o tsv)
 
-ssh adminuser@$ip -i dblab.key docker stop dblab_server && docker rm dblab_server && rm -rf /var/lib/dblab/dblab_pool_01/dump/* && rm -rf /var/lib/dblab/dblab_pool_01/data
-
 #Start DBLAB
 ssh adminuser@$ip -i dblab.key docker run \
   --name dblab_server \

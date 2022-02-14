@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Install Docker
 sudo apt-get update
@@ -14,8 +14,22 @@ echo \
 sudo apt-get update
 sudo apt-get install docker-ce docker-ce-cli containerd.io zfsutils-linux postgresql-client -y
 
+
+#Optional to start fresh
+docker stop dblab_server; 
+docker rm dblab_server; 
+sudo rm -rf /var/lib/dblab/dblab_pool_01/dump/*;
+sudo rm -rf /var/lib/dblab/dblab_pool_01/data; 
+sudo rm -rf /var/lib/dblab/dblab_pool_02/dump/*;
+sudo rm -rf /var/lib/dblab/dblab_pool_02/data; 
+sudo rm -rf /home/adminuser/.dblab/engine/meta;
+
+list=$(lsblk --noheadings --raw | grep 10G | awk '{ print $1 }' | grep -E "^sd[a-z]$")
+list=($list)
+
+echo dblab_pool_01=/dev/${list[0]}
 # Create ZFS pool
-export DBLAB_DISK=/dev/sdc
+export DBLAB_DISK=/dev/${list[0]}
 sudo zpool create -f \
   -O compression=on \
   -O atime=off \
@@ -29,7 +43,8 @@ sudo zpool export dblab_pool_01
 sudo zpool import -d /dev/disk/by-id dblab_pool_01
 sudo zpool import -c /etc/zfs/zpool.cache
 
-export DBLAB_DISK=/dev/sdd
+echo dblab_pool_02=/dev/${list[1]}
+export DBLAB_DISK=/dev/${list[1]}
 sudo zpool create -f \
   -O compression=on \
   -O atime=off \
@@ -42,6 +57,8 @@ sudo zpool create -f \
 sudo zpool export dblab_pool_02
 sudo zpool import -d /dev/disk/by-id dblab_pool_02
 sudo zpool import -c /etc/zfs/zpool.cache
+
+zpool list
 
 mkdir -p ~/.dblab/engine/configs
 
