@@ -18,8 +18,6 @@ yq -i e ".server.verificationToken |= \"$token\"" vm/server.yml
 yq -i e ".retrieval.spec.logicalDump.options.source.connection.host |= \"$db_fqdn\"" vm/server.yml
 yq -i e ".retrieval.spec.logicalDump.options.source.connection.username |= \"$db_username\"" vm/server.yml
 yq -i e ".retrieval.spec.logicalDump.options.source.connection.password |= \"$db_password\"" vm/server.yml
-# yq -i e ".databaseContainer.dockerImage |= \"postgres:$db_version-alpine\"" vm/server.yml
-# yq -i e ".databaseContainer.dockerImage |= \"postgresai/extended-postgres:$db_version\"" vm/server.yml
 yq -i e ".databaseContainer.dockerImage |= \"mypostgresai\"" vm/server.yml
 yq -i e ".retrieval.spec.logicalDump.options.databases = {\"dblabdemo\":{}}" vm/server.yml
 yq -i e ".retrieval.spec.logicalRestore.options.databases = {\"dblabdemo\":{}}" vm/server.yml
@@ -34,10 +32,11 @@ echo "Upload files"
 scp -i dblab.key $PWD/vm/install.sh adminuser@$ip:/home/adminuser/install.sh
 scp -i dblab.key $PWD/vm/random.sql adminuser@$ip:/home/adminuser/random.sql
 scp -i dblab.key $PWD/vm/Dockerfile adminuser@$ip:/home/adminuser/Dockerfile
-scp -i dblab.key $PWD/vm/server.yml adminuser@$ip:/home/adminuser/.dblab/engine/configs/server.yml
 
 echo "Installing all dependencies"
 ssh adminuser@$ip -i dblab.key 'bash /home/adminuser/install.sh && rm /home/adminuser/install.sh'
+
+scp -i dblab.key $PWD/vm/server.yml adminuser@$ip:/home/adminuser/.dblab/engine/configs/server.yml
 
 echo "Build custom postgres image"
 ssh adminuser@$ip -i dblab.key 'docker build -t mypostgresai - < Dockerfile && rm /home/adminuser/Dockerfile'
