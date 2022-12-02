@@ -14,6 +14,8 @@ echo \
 sudo apt-get update
 sudo apt-get install docker-ce docker-ce-cli containerd.io zfsutils-linux postgresql-client -y
 
+sudo groupadd docker
+sudo usermod -aG docker $USER
 
 #Optional to start fresh
 docker stop dblab_server; 
@@ -65,6 +67,3 @@ mkdir -p ~/.dblab/engine/configs
 # Install DBLAB
 curl https://gitlab.com/postgres-ai/database-lab/-/raw/master/engine/scripts/cli_install.sh | bash
 sudo mv ~/.dblab/dblab /usr/local/bin/dblab
-
-sudo groupadd docker
-sudo usermod -aG docker $USER

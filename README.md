@@ -33,3 +33,15 @@ export rgstate="rg-dblab-demo-state"
 export sastate="sadblabdemostate" #changeme as this needs to be globally unique ;)
 export subscription="xxxx1234-1234-1234-1234-xxxxxx123456"
 ```
+
+## Sample queries
+
+```sql
+select count(1) from users 
+
+INSERT INTO users (hash_firstname, hash_lastname, gender) VALUES ('bla', 'bla', 'male')
+
+select count(1) from users 
+
+select * from users where users.hash_firstname='bla'
+```

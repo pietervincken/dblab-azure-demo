@@ -4,5 +4,5 @@ rm dblab.key
 
 cd terraform
 terraform init -backend-config=config.azurerm.tfbackend
-terraform apply
+terraform apply -auto-approve
 cd ..

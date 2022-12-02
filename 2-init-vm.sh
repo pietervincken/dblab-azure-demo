@@ -22,6 +22,7 @@ yq -i e ".databaseContainer.dockerImage |= \"mypostgresai\"" vm/server.yml
 yq -i e ".retrieval.spec.logicalDump.options.databases = {\"dblabdemo\":{}}" vm/server.yml
 yq -i e ".retrieval.spec.logicalRestore.options.databases = {\"dblabdemo\":{}}" vm/server.yml
 yq -i e ".embeddedUI.host |= \"0.0.0.0\"" vm/server.yml
+yq -i e ".embeddedUI.dockerImage |= \"postgresai/ce-ui:1.0.13\"" vm/server.yml
 yq -i e ".cloning.accessHost |= \"$ip\"" vm/server.yml
 yq -i e ".retrieval.spec.logicalDump.options.dumpLocation |= \"/var/lib/dblab/dblab_pool_01/dump\"" vm/server.yml
 yq -i e ".retrieval.spec.logicalRestore.options.dumpLocation |= \"/var/lib/dblab/dblab_pool_01/dump\"" vm/server.yml
@@ -41,6 +42,6 @@ scp -i dblab.key $PWD/vm/server.yml adminuser@$ip:/home/adminuser/.dblab/engine/
 echo "Build custom postgres image"
 ssh adminuser@$ip -i dblab.key 'docker build -t mypostgresai - < Dockerfile && rm /home/adminuser/Dockerfile'
 
-echo "Create test data on source instance"
+# echo "Create test data on source instance"
 command="PGPASSWORD=$db_password psql -f random.sql -h $db_fqdn -U $db_username -d dblabdemo && rm /home/adminuser/random.sql"
 ssh adminuser@$ip -i dblab.key "$command"

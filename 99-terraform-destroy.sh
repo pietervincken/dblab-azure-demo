@@ -2,7 +2,7 @@
 
 cd terraform
 terraform init -backend-config=config.azurerm.tfbackend
-terraform destroy
+terraform destroy -auto-approve
 cd ..
 
 # Remove work files
