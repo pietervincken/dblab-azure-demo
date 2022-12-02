@@ -30,3 +30,5 @@ ssh adminuser@$ip -i dblab.key dblab instance status
 
 echo "token: $token"
 open http://$ip:2346
+
+ssh adminuser@$ip -i dblab.key docker logs -f dblab_server
