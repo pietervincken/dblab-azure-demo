@@ -37,11 +37,12 @@ export subscription="xxxx1234-1234-1234-1234-xxxxxx123456"
 ## Sample queries
 
 ```sql
-select count(1) from users 
+select count(1) from users;
+select * from users limit 10;
 
-INSERT INTO users (hash_firstname, hash_lastname, gender) VALUES ('bla', 'bla', 'male')
+INSERT INTO users (hash_firstname, hash_lastname, gender) VALUES ('jcon', 'hello', 'female');
+select * from users where users.hash_firstname='jcon';
 
-select count(1) from users 
+select count(1) from users;
 
-select * from users where users.hash_firstname='bla'
 ```
